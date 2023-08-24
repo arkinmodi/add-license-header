@@ -1,0 +1,79 @@
+name: Lint Application
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - test-me-*
+  workflow_dispatch:
+
+jobs:
+  add-trailing-comma:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - run: python3 -m pip install add-trailing-comma
+      - run: add-trailing-comma --py36-plus $(git ls-files -- '*.py')
+
+  autopep8:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - run: python3 -m pip install autopep8
+      - run: >
+          python3 -m autopep8
+          --exit-code
+          --aggressive
+          --aggressive
+          --in-place
+          $(git ls-files -- '*.py')
+
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - run: python3 -m pip install flake8
+      - run: python3 -m flake8 $(git ls-files -- '*.py')
+
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - run: python3 -m pip install mypy
+      - run: >
+          python3 -m mypy
+          --ignore-missing-imports
+          --scripts-are-modules
+          $(git ls-files -- '*.py')
+
+  pyupgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - run: python3 -m pip install pyupgrade
+      - run: python3 -m pyupgrade --py38-plus $(git ls-files -- '*.py')
+
+  reorder-python-imports:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - run: python3 -m pip install reorder-python-imports
+      - run: reorder-python-imports --py37-plus $(git ls-files -- '*.py')

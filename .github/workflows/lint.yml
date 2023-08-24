@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: "3.x"
       - run: python3 -m pip install add-trailing-comma
-      - run: add-trailing-comma --py36-plus $(git ls-files -- '*.py')
+      - run: add-trailing-comma $(git ls-files -- '*.py')
 
   autopep8:
     runs-on: ubuntu-latest

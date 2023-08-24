@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
+from datetime import date
 from typing import NamedTuple
 
 from identify import identify
@@ -20,11 +22,20 @@ BLOCK_COMMENT = {
     'ts': BlockComment('/*', ' * ', ' */'),
 }
 
+RE_AUTHOR_NAME = re.compile(r'\${author_name}')
+RE_END_YEAR = re.compile(r'\${end_year}')
+RE_START_YEAR = re.compile(r'\${start_year}')
+
+WRAP_LICENSE_IN_COMMENTS_CACHE: dict[str, list[str]] = {}
+
 
 def _wrap_license_in_comments(
     license_fmt: list[str],
     file_type: str,
 ) -> list[str]:
+    if file_type in WRAP_LICENSE_IN_COMMENTS_CACHE:
+        return WRAP_LICENSE_IN_COMMENTS_CACHE[file_type]
+
     header = list(license_fmt)
 
     if file_type in BLOCK_COMMENT:
@@ -43,14 +54,26 @@ def _wrap_license_in_comments(
         if comment.end:
             header.append(f'{comment.end}\n')
 
+    WRAP_LICENSE_IN_COMMENTS_CACHE[file_type] = header
     return header
 
 
-def _build_license_header(license_filename: str) -> list[str]:
-    with open(license_filename) as f:
+def _build_license_header(
+    filename: str,
+    *,
+    start_year: str,
+    end_year: str,
+    author_name: str,
+) -> list[str]:
+    with open(filename) as f:
         license_template = f.readlines()
 
-    # TODO: license template stuff
+    for i, line in enumerate(license_template):
+        line = RE_START_YEAR.sub(start_year, line)
+        line = RE_END_YEAR.sub(end_year, line)
+        line = RE_AUTHOR_NAME.sub(author_name, line)
+        license_template[i] = line.rstrip() + '\n'
+
     return license_template
 
 
@@ -135,12 +158,19 @@ def main() -> int:
         required=True,
         help='path to license template',
     )
-    # parser.add_argument('--start-year')
-    # parser.add_argument('--end-year')
+    parser.add_argument('--start-year', default=str(date.today().year))
+    parser.add_argument('--end-year', default=str(date.today().year))
+    parser.add_argument('--author-name', default='')
     parser.add_argument('filenames', nargs='*')
     args = parser.parse_args()
 
-    license_formatted = _build_license_header(args.license)
+    license_formatted = _build_license_header(
+        args.license,
+        start_year=args.start_year,
+        end_year=args.end_year,
+        author_name=args.author_name,
+    )
+
     return_code = 0
     for filename in args.filenames:
         return_code |= _add_license_header(filename, license_formatted)

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-
 from typing import NamedTuple
 
 from identify import identify
@@ -48,7 +47,7 @@ def _wrap_license_in_comments(
 
 
 def _build_license_header(license_filename: str) -> list[str]:
-    with open(license_filename, 'r') as f:
+    with open(license_filename) as f:
         license_template = f.readlines()
 
     # TODO: license template stuff
@@ -57,7 +56,7 @@ def _build_license_header(license_filename: str) -> list[str]:
 
 def _has_license_header(
     contents: list[str],
-    license_header: list[str]
+    license_header: list[str],
 ) -> bool:
     # Find where license should start
     i = 0
@@ -100,7 +99,7 @@ def _add_license_header(filename: str, license_formatted: list[str]) -> int:
 
     license_header = _wrap_license_in_comments(license_formatted, file_type)
 
-    with open(filename, 'r') as f:
+    with open(filename) as f:
         contents_text = f.readlines()
 
     if not _has_license_header(contents_text, license_header):
@@ -134,7 +133,7 @@ def main() -> int:
     parser.add_argument(
         '--license',
         required=True,
-        help='path to license template'
+        help='path to license template',
     )
     # parser.add_argument('--start-year')
     # parser.add_argument('--end-year')

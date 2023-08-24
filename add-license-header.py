@@ -102,7 +102,12 @@ def _has_license_header(
     return j >= len(license_header)
 
 
-def _add_license_header(filename: str, license_formatted: list[str]) -> int:
+def _add_license_header(
+    filename: str,
+    license_formatted: list[str],
+    *,
+    dry_run: bool,
+) -> int:
     file_types = identify.tags_from_path(filename)
 
     if 'binary' in file_types:
@@ -127,24 +132,24 @@ def _add_license_header(filename: str, license_formatted: list[str]) -> int:
 
     if not _has_license_header(contents_text, license_header):
         print(f'adding license to {filename}', file=sys.stderr)
+        if not dry_run:
+            if len(contents_text) > 0 and contents_text[0].startswith('#!'):
+                with open(filename, 'w') as f:
+                    f.write(contents_text[0])
 
-        if len(contents_text) > 0 and contents_text[0].startswith('#!'):
-            with open(filename, 'w') as f:
-                f.write(contents_text[0])
+                    f.write('\n')
+                    for text in license_header:
+                        f.write(text)
 
-                f.write('\n')
-                for text in license_header:
-                    f.write(text)
+                    for i in range(1, len(contents_text)):
+                        f.write(contents_text[i])
+            else:
+                with open(filename, 'w') as f:
+                    for text in license_header:
+                        f.write(text)
 
-                for i in range(1, len(contents_text)):
-                    f.write(contents_text[i])
-        else:
-            with open(filename, 'w') as f:
-                for text in license_header:
-                    f.write(text)
-
-                for text in contents_text:
-                    f.write(text)
+                    for text in contents_text:
+                        f.write(text)
 
         return 1
     return 0
@@ -173,7 +178,11 @@ def main() -> int:
 
     return_code = 0
     for filename in args.filenames:
-        return_code |= _add_license_header(filename, license_formatted)
+        return_code |= _add_license_header(
+            filename,
+            license_formatted,
+            dry_run=args.dry_run,
+        )
     return return_code
 
 

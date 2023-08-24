@@ -16,10 +16,32 @@ class BlockComment(NamedTuple):
 
 
 BLOCK_COMMENT = {
+    'bash': BlockComment('', '# ', ''),
+    'c#': BlockComment('/*', ' * ', ' */'),
+    'c': BlockComment('/*', ' * ', ' */'),
+    'c++': BlockComment('/*', ' * ', ' */'),
+    'css': BlockComment('/*', ' * ', ' */'),
+    'go': BlockComment('/*', ' * ', ' */'),
+    'groovy': BlockComment('/*', ' * ', ' */'),
+    'html': BlockComment('<!--', '', '-->'),
     'java': BlockComment('/*', ' * ', ' */'),
     'javascript': BlockComment('/*', ' * ', ' */'),
+    'jsx': BlockComment('/*', ' * ', ' */'),
+    'kotlin': BlockComment('/*', ' * ', ' */'),
+    'lua': BlockComment('--[[', '', '--]]'),
+    'makefile': BlockComment('', '# ', ''),
+    'php': BlockComment('/*', ' * ', ' */'),
     'python': BlockComment('', '# ', ''),
+    'ruby': BlockComment('', '# ', ''),
+    'rust': BlockComment('/*', ' * ', ' */'),
+    'scala': BlockComment('/*', ' * ', ' */'),
+    'swift': BlockComment('/*', ' * ', ' */'),
+    'terraform': BlockComment('/*', ' * ', ' */'),
+    'toml': BlockComment('', '# ', ''),
     'ts': BlockComment('/*', ' * ', ' */'),
+    'tsx': BlockComment('/*', ' * ', ' */'),
+    'yaml': BlockComment('', '# ', ''),
+    'zsh': BlockComment('', '# ', ''),
 }
 
 RE_AUTHOR_NAME = re.compile(r'\${author_name}')
@@ -123,6 +145,11 @@ def _add_license_header(
             break
     else:
         print(f'unsupported file format: {filename}', file=sys.stderr)
+        print(
+            'feel to open an issue/pr at '
+            'https://github.com/arkinmodi/add-license-header to add support!',
+            file=sys.stderr,
+        )
         return 1
 
     license_header = _wrap_license_in_comments(license_formatted, file_type)
@@ -140,6 +167,7 @@ def _add_license_header(
                     f.write('\n')
                     for text in license_header:
                         f.write(text)
+                    f.write('\n')
 
                     for i in range(1, len(contents_text)):
                         f.write(contents_text[i])
@@ -147,6 +175,7 @@ def _add_license_header(
                 with open(filename, 'w') as f:
                     for text in license_header:
                         f.write(text)
+                    f.write('\n')
 
                     for text in contents_text:
                         f.write(text)

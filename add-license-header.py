@@ -48,35 +48,34 @@ RE_AUTHOR_NAME = re.compile(r'\${author_name}')
 RE_END_YEAR = re.compile(r'\${end_year}')
 RE_START_YEAR = re.compile(r'\${start_year}')
 
-WRAP_LICENSE_IN_COMMENTS_CACHE: dict[str, list[str]] = {}
+WRAP_LICENSE_IN_COMMENTS_CACHE: dict[BlockComment, list[str]] = {}
 
 
 def _wrap_license_in_comments(
     license_fmt: list[str],
     file_type: str,
 ) -> list[str]:
-    if file_type in WRAP_LICENSE_IN_COMMENTS_CACHE:
-        return WRAP_LICENSE_IN_COMMENTS_CACHE[file_type]
+    comment = BLOCK_COMMENT[file_type]
+
+    if comment in WRAP_LICENSE_IN_COMMENTS_CACHE:
+        return WRAP_LICENSE_IN_COMMENTS_CACHE[comment]
 
     header = list(license_fmt)
 
-    if file_type in BLOCK_COMMENT:
-        comment = BLOCK_COMMENT[file_type]
+    if comment.middle:
+        for i in range(len(license_fmt)):
+            if header[i] == '\n':
+                header[i] = f'{comment.middle}'.rstrip(' ') + '\n'
+            else:
+                header[i] = f'{comment.middle}{header[i]}'
 
-        if comment.middle:
-            for i in range(len(license_fmt)):
-                if header[i] == '\n':
-                    header[i] = f'{comment.middle}'.rstrip(' ') + '\n'
-                else:
-                    header[i] = f'{comment.middle}{header[i]}'
+    if comment.start:
+        header.insert(0, f'{comment.start}\n')
 
-        if comment.start:
-            header.insert(0, f'{comment.start}\n')
+    if comment.end:
+        header.append(f'{comment.end}\n')
 
-        if comment.end:
-            header.append(f'{comment.end}\n')
-
-    WRAP_LICENSE_IN_COMMENTS_CACHE[file_type] = header
+    WRAP_LICENSE_IN_COMMENTS_CACHE[comment] = header
     return header
 
 
@@ -124,33 +123,53 @@ def _has_license_header(
     return j >= len(license_header)
 
 
-def _add_license_header(
-    filename: str,
-    license_formatted: list[str],
-    *,
-    dry_run: bool,
-) -> int:
+class UnknownFileTypeException(Exception):
+    pass
+
+
+class BinaryFileTypeException(Exception):
+    pass
+
+
+def _get_file_type(filename: str) -> str:
     file_types = identify.tags_from_path(filename)
 
     if 'binary' in file_types:
-        print(
+        raise BinaryFileTypeException(
             f'cannot add license to binary file: {filename}',
-            file=sys.stderr,
         )
-        return 1
 
     for ft in file_types:
         if ft in BLOCK_COMMENT:
             file_type = ft
             break
     else:
+        raise UnknownFileTypeException(f'unsupported file format: {filename}')
+    return file_type
+
+
+def _add_license_header(
+    filename: str,
+    license_formatted: list[str],
+    *,
+    dry_run: bool,
+) -> int:
+    try:
+        file_type = _get_file_type(filename)
+    except UnknownFileTypeException:
         print(f'unsupported file format: {filename}', file=sys.stderr)
         print(
             'feel to open an issue/pr at '
             'https://github.com/arkinmodi/add-license-header to add support!',
             file=sys.stderr,
         )
-        return 1
+        return -1
+    except BinaryFileTypeException:
+        print(
+            f'cannot add license to a binary file: {filename}',
+            file=sys.stderr,
+        )
+        return -1
 
     license_header = _wrap_license_in_comments(license_formatted, file_type)
 

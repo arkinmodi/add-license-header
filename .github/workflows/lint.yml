@@ -1,5 +1,6 @@
+---
 name: Lint Application
-on:
+"on":
   pull_request:
   push:
     branches:
@@ -77,3 +78,23 @@ jobs:
           python-version: "3.x"
       - run: python3 -m pip install reorder-python-imports
       - run: reorder-python-imports --py37-plus $(git ls-files -- '*.py')
+
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - run: python3 -m pip install yamllint
+      - run: python3 -m yamllint --strict .
+
+  prettier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: latest
+      - run: npm install prettier
+      - run: npx prettier --check '**/*.{md,yml,yaml}'

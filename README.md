@@ -13,6 +13,7 @@ You can use template markers to dynamically change your license.
 | `${author_name}` | Empty String | `--author-name` |
 
 For example:
+
 ```text
 MIT License
 

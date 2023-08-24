@@ -98,3 +98,13 @@ jobs:
           node-version: latest
       - run: npm install prettier
       - run: npx prettier --check '**/*.{md,yml,yaml}'
+
+  setup-cfg-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - run: python3 -m pip install setup-cfg-fmt
+      - run: setup-cfg-fmt setup.cfg

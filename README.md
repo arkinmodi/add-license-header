@@ -49,7 +49,7 @@ $ add-license-header \
     --author 'Arkin Modi' \
     --start-year 2023 \
     example.py
-adding license to example.py
+updating license in example.py
 
 $ cat example.py
 # LICENSE HEADER MANAGED BY add-license-header

@@ -5,6 +5,7 @@ import re
 import sys
 from datetime import date
 from typing import NamedTuple
+from typing import Sequence
 
 from identify import identify
 
@@ -16,37 +17,39 @@ class BlockComment(NamedTuple):
 
 
 BLOCK_COMMENT = {
-    'bash': BlockComment('', '# ', ''),
-    'c#': BlockComment('/*', ' * ', ' */'),
-    'c': BlockComment('/*', ' * ', ' */'),
-    'c++': BlockComment('/*', ' * ', ' */'),
-    'css': BlockComment('/*', ' * ', ' */'),
-    'go': BlockComment('/*', ' * ', ' */'),
-    'groovy': BlockComment('/*', ' * ', ' */'),
+    'bash': BlockComment('#', '#', '#'),
+    'c#': BlockComment('/*', ' *', ' */'),
+    'c': BlockComment('/*', ' *', ' */'),
+    'c++': BlockComment('/*', ' *', ' */'),
+    'css': BlockComment('/*', ' *', ' */'),
+    'go': BlockComment('/*', ' *', ' */'),
+    'groovy': BlockComment('/*', ' *', ' */'),
     'html': BlockComment('<!--', '', '-->'),
-    'java': BlockComment('/*', ' * ', ' */'),
-    'javascript': BlockComment('/*', ' * ', ' */'),
-    'jsx': BlockComment('/*', ' * ', ' */'),
-    'kotlin': BlockComment('/*', ' * ', ' */'),
+    'java': BlockComment('/*', ' *', ' */'),
+    'javascript': BlockComment('/*', ' *', ' */'),
+    'jsx': BlockComment('/*', ' *', ' */'),
+    'kotlin': BlockComment('/*', ' *', ' */'),
     'lua': BlockComment('--[[', '', '--]]'),
-    'makefile': BlockComment('', '# ', ''),
-    'php': BlockComment('/*', ' * ', ' */'),
-    'python': BlockComment('', '# ', ''),
-    'ruby': BlockComment('', '# ', ''),
-    'rust': BlockComment('/*', ' * ', ' */'),
-    'scala': BlockComment('/*', ' * ', ' */'),
-    'swift': BlockComment('/*', ' * ', ' */'),
-    'terraform': BlockComment('/*', ' * ', ' */'),
-    'toml': BlockComment('', '# ', ''),
-    'ts': BlockComment('/*', ' * ', ' */'),
-    'tsx': BlockComment('/*', ' * ', ' */'),
-    'yaml': BlockComment('', '# ', ''),
-    'zsh': BlockComment('', '# ', ''),
+    'makefile': BlockComment('#', '#', '#'),
+    'php': BlockComment('/*', ' *', ' */'),
+    'python': BlockComment('#', '#', '#'),
+    'ruby': BlockComment('#', '#', '#'),
+    'rust': BlockComment('/*', ' *', ' */'),
+    'scala': BlockComment('/*', ' *', ' */'),
+    'swift': BlockComment('/*', ' *', ' */'),
+    'terraform': BlockComment('/*', ' *', ' */'),
+    'toml': BlockComment('#', '#', '#'),
+    'ts': BlockComment('/*', ' *', ' */'),
+    'tsx': BlockComment('/*', ' *', ' */'),
+    'yaml': BlockComment('#', '#', '#'),
+    'zsh': BlockComment('#', '#', '#'),
 }
 
 RE_AUTHOR_NAME = re.compile(r'\${author_name}')
 RE_END_YEAR = re.compile(r'\${end_year}')
 RE_START_YEAR = re.compile(r'\${start_year}')
+
+ALH_HEADER = 'LICENSE HEADER MANAGED BY add-license-header'
 
 WRAP_LICENSE_IN_COMMENTS_CACHE: dict[BlockComment, list[str]] = {}
 
@@ -60,19 +63,18 @@ def _wrap_license_in_comments(
     if comment in WRAP_LICENSE_IN_COMMENTS_CACHE:
         return WRAP_LICENSE_IN_COMMENTS_CACHE[comment]
 
-    header = list(license_fmt)
+    header = license_fmt[:]
 
-    if comment.middle:
-        for i in range(len(license_fmt)):
-            if header[i] == '\n':
-                header[i] = f'{comment.middle}'.rstrip(' ') + '\n'
-            else:
-                header[i] = f'{comment.middle}{header[i]}'
+    for i in range(len(header)):
+        if header[i] == '\n':
+            header[i] = f'{comment.middle}\n'
+        else:
+            header[i] = f'{comment.middle} {header[i]}'
 
-    if comment.start:
-        header.insert(0, f'{comment.start}\n')
+    header.insert(0, f'{comment.middle}\n')
+    header.insert(0, f'{comment.start} {ALH_HEADER}\n')
 
-    if comment.end:
+    if comment.end != comment.middle:
         header.append(f'{comment.end}\n')
 
     WRAP_LICENSE_IN_COMMENTS_CACHE[comment] = header
@@ -98,29 +100,43 @@ def _build_license_header(
     return license_template
 
 
-def _has_license_header(
+def _update_license_header(
+    *,
     contents: list[str],
+    file_type: str,
     license_header: list[str],
-) -> bool:
-    # Find where license should start
+) -> list[str]:
+    comment = BLOCK_COMMENT[file_type]
+    # Find start of license header
     i = 0
-    while (
-        i < len(contents) and
-        (contents[i].startswith('#!') or contents[i] == '\n')
-    ):
+    while i < len(contents) and contents[i] != license_header[0]:
         i += 1
 
-    # Check if matches expected license
-    j = 0
-    while (
-        i < len(contents) and
-        j < len(license_header) and
-        contents[i] == license_header[j]
-    ):
-        i += 1
-        j += 1
-
-    return j >= len(license_header)
+    if i == len(contents):  # License header not in file, so add it
+        if len(contents) > 0 and contents[0].startswith('#!'):
+            new_contents = [
+                contents[0],
+                '\n',
+                *license_header,
+                '\n',
+                *contents[1:],
+            ]
+        else:
+            new_contents = [*license_header, '\n'] + contents
+    else:  # License header is in file, so update it
+        # Check where license header ends
+        j = i
+        while (
+            j < len(contents) and
+            (
+                contents[j].startswith(comment.start) or
+                contents[j].startswith(comment.middle) or
+                contents[j].startswith(comment.end)
+            )
+        ):
+            j += 1
+        new_contents = contents[:i] + license_header + contents[j:]
+    return new_contents
 
 
 class UnknownFileTypeException(Exception):
@@ -132,16 +148,16 @@ class BinaryFileTypeException(Exception):
 
 
 def _get_file_type(filename: str) -> str:
-    file_types = identify.tags_from_path(filename)
+    identify_tags = identify.tags_from_path(filename)
 
-    if 'binary' in file_types:
+    if 'binary' in identify_tags:
         raise BinaryFileTypeException(
             f'cannot add license to binary file: {filename}',
         )
 
-    for ft in file_types:
-        if ft in BLOCK_COMMENT:
-            file_type = ft
+    for tag in identify_tags:
+        if tag in BLOCK_COMMENT:
+            file_type = tag
             break
     else:
         raise UnknownFileTypeException(f'unsupported file format: {filename}')
@@ -176,36 +192,24 @@ def _add_license_header(
     with open(filename) as f:
         contents_text = f.readlines()
 
-    if not _has_license_header(contents_text, license_header):
-        print(f'adding license to {filename}', file=sys.stderr)
+    new_contents = _update_license_header(
+        contents=contents_text,
+        file_type=file_type,
+        license_header=license_header,
+    )
+
+    if new_contents != contents_text:
+        print(f'updating license in {filename}', file=sys.stderr)
         if not dry_run:
-            if len(contents_text) > 0 and contents_text[0].startswith('#!'):
-                with open(filename, 'w') as f:
-                    f.write(contents_text[0])
-
-                    f.write('\n')
-                    for text in license_header:
-                        f.write(text)
-                    f.write('\n')
-
-                    for i in range(1, len(contents_text)):
-                        f.write(contents_text[i])
-            else:
-                with open(filename, 'w') as f:
-                    for text in license_header:
-                        f.write(text)
-                    f.write('\n')
-
-                    for text in contents_text:
-                        f.write(text)
-
+            with open(filename, 'w') as f:
+                f.write(''.join(new_contents))
         return 1
     return 0
 
 
-def main() -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--check', action='store_true')
     parser.add_argument(
         '--license',
         required=True,
@@ -229,7 +233,7 @@ def main() -> int:
         return_code |= _add_license_header(
             filename,
             license_formatted,
-            dry_run=args.dry_run,
+            dry_run=args.check,
         )
     return return_code
 

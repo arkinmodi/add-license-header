@@ -1,6 +1,6 @@
 # add-license-header
 
-A tool for automatically adding your license to as a header in your source code.
+A tool for automatically adding your license as a header in your source code.
 
 ## Template Options
 
@@ -40,15 +40,20 @@ SOFTWARE.
 
 ## What does it do?
 
-It turns this
-
-```python
+```shell
+$ cat example.py
 print("Hello World")
-```
 
-into this
+$ add-license-header \
+    --license MIT-LICENSE.template \
+    --author 'Arkin Modi' \
+    --start-year 2023 \
+    example.py
+adding license to example.py
 
-```python
+$ cat example.py
+# LICENSE HEADER MANAGED BY add-license-header
+#
 # MIT License
 #
 # Copyright (c) 2023 Arkin Modi

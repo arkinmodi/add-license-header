@@ -1,2 +1,5 @@
+*.egg-info
 .DS_Store
+.coverage
+build
 venv*

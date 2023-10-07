@@ -15,7 +15,7 @@ jobs:
       matrix:
         env: ["py38", "py39", "py310", "py311", "py312"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: |

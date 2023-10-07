@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import re
 import sys
 from datetime import date
@@ -51,19 +52,14 @@ RE_START_YEAR = re.compile(r'\${start_year}')
 
 ALH_HEADER = 'LICENSE HEADER MANAGED BY add-license-header'
 
-WRAP_LICENSE_IN_COMMENTS_CACHE: dict[BlockComment, list[str]] = {}
 
-
+@functools.lru_cache
 def _wrap_license_in_comments(
-    license_fmt: list[str],
+    license_fmt: tuple[str, ...],
     file_type: str,
 ) -> list[str]:
     comment = BLOCK_COMMENT[file_type]
-
-    if comment in WRAP_LICENSE_IN_COMMENTS_CACHE:
-        return WRAP_LICENSE_IN_COMMENTS_CACHE[comment]
-
-    header = license_fmt[:]
+    header = list(license_fmt)
 
     for i in range(len(header)):
         if header[i] == '\n':
@@ -76,8 +72,6 @@ def _wrap_license_in_comments(
 
     if comment.end != comment.middle:
         header.append(f'{comment.end}\n')
-
-    WRAP_LICENSE_IN_COMMENTS_CACHE[comment] = header
     return header
 
 
@@ -87,7 +81,7 @@ def _build_license_header(
     start_year: str,
     end_year: str,
     author_name: str,
-) -> list[str]:
+) -> tuple[str, ...]:
     with open(filename) as f:
         license_template = f.readlines()
 
@@ -97,7 +91,7 @@ def _build_license_header(
         line = RE_AUTHOR_NAME.sub(author_name, line)
         license_template[i] = line.rstrip() + '\n'
 
-    return license_template
+    return tuple(license_template)
 
 
 def _update_license_header(
@@ -166,7 +160,7 @@ def _get_file_type(filename: str) -> str:
 
 def _add_license_header(
     filename: str,
-    license_formatted: list[str],
+    license_formatted: tuple[str, ...],
     *,
     dry_run: bool,
 ) -> int:

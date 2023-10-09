@@ -64,7 +64,7 @@ def _wrap_license_in_comments(
     for i in range(len(header)):
         if header[i] == '\n':
             header[i] = f'{comment.middle}\n'
-        else:
+        elif comment.middle != '':
             header[i] = f'{comment.middle} {header[i]}'
 
     header.insert(0, f'{comment.middle}\n')
@@ -101,12 +101,15 @@ def _update_license_header(
     license_header: list[str],
 ) -> list[str]:
     comment = BLOCK_COMMENT[file_type]
-    # Find start of license header
-    i = 0
-    while i < len(contents) and contents[i] != license_header[0]:
-        i += 1
+    header_start_index = 0
+    while (
+        header_start_index < len(contents) and
+        contents[header_start_index] != license_header[0]
+    ):
+        header_start_index += 1
 
-    if i == len(contents):  # License header not in file, so add it
+    # License header not in file, so add it
+    if header_start_index == len(contents):
         if len(contents) > 0 and contents[0].startswith('#!'):
             new_contents = [
                 contents[0],
@@ -118,18 +121,26 @@ def _update_license_header(
         else:
             new_contents = [*license_header, '\n'] + contents
     else:  # License header is in file, so update it
-        # Check where license header ends
-        j = i
-        while (
-            j < len(contents) and
-            (
-                contents[j].startswith(comment.start) or
-                contents[j].startswith(comment.middle) or
-                contents[j].startswith(comment.end)
-            )
-        ):
-            j += 1
-        new_contents = contents[:i] + license_header + contents[j:]
+        header_end_index = header_start_index + 1
+        if comment.middle == comment.end:
+            while (
+                header_end_index < len(contents) and
+                contents[header_end_index].startswith(comment.end)
+            ):
+                header_end_index += 1
+        else:
+            while (
+                header_end_index < len(contents) and
+                not contents[header_end_index].startswith(comment.end)
+            ):
+                header_end_index += 1
+            header_end_index += 1
+
+        new_contents = (
+            contents[:header_start_index] +
+            license_header +
+            contents[header_end_index:]
+        )
     return new_contents
 
 
@@ -213,7 +224,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument('--end-year', default=str(date.today().year))
     parser.add_argument('--author-name', default='')
     parser.add_argument('filenames', nargs='*')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     license_formatted = _build_license_header(
         args.license,

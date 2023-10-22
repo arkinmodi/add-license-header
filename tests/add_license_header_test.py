@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from datetime import date
+
 import pytest
 
 from add_license_header import BinaryFileTypeException
@@ -481,7 +484,7 @@ def test_main_unknown_file_type(tmp_path):
         f.resolve().as_posix(),
     ])
 
-    assert return_code == -1
+    assert return_code == 1
 
 
 def test_main_binary_file(tmp_path):
@@ -505,4 +508,91 @@ def test_main_binary_file(tmp_path):
         f.resolve().as_posix(),
     ])
 
-    assert return_code == -1
+    assert return_code == 1
+
+
+def test_main_missing_license_template_file(tmp_path):
+    f = tmp_path.joinpath('t.py')
+    f.write_text('print("Hello World")')
+
+    return_code = main([
+        '--start-year', '2023',
+        '--end-year', '2024',
+        '--author-name', 'John Smith',
+        f.resolve().as_posix(),
+    ])
+
+    assert return_code == 1
+
+
+def test_main_config_file(tmp_path):
+    license_file = tmp_path.joinpath('license')
+    license_file.write_text(
+        'TEST LICENSE\n'
+        'this is a test license\n'
+        '${start_year}\n'
+        '${end_year}\n'
+        '${author_name}\n',
+    )
+    config_file = tmp_path.joinpath('.add-license-header.json')
+    config_file.write_text(
+        json.dumps({
+            'license': license_file.resolve().as_posix(),
+            'start_year': 2023,
+            'end_year': 2024,
+            'author_name': 'John Smith',
+        }),
+    )
+    f = tmp_path.joinpath('t.py')
+    f.write_text('print("Hello World")\n')
+
+    return_code = main([
+        '--config-file', config_file.resolve().as_posix(),
+        f.resolve().as_posix(),
+    ])
+
+    expected = """\
+# LICENSE HEADER MANAGED BY add-license-header
+#
+# TEST LICENSE
+# this is a test license
+# 2023
+# 2024
+# John Smith
+
+print("Hello World")
+"""
+    assert f.read_text() == expected
+    assert return_code == 1
+
+
+def test_main_use_defaults(tmp_path):
+    license_file = tmp_path.joinpath('license')
+    license_file.write_text(
+        'TEST LICENSE\n'
+        'this is a test license\n'
+        '${start_year}\n'
+        '${end_year}\n'
+        '${author_name}\n',
+    )
+    f = tmp_path.joinpath('t.py')
+    f.write_text('print("Hello World")\n')
+
+    return_code = main([
+        '--license', license_file.resolve().as_posix(),
+        f.resolve().as_posix(),
+    ])
+
+    expected = f"""\
+# LICENSE HEADER MANAGED BY add-license-header
+#
+# TEST LICENSE
+# this is a test license
+# {date.today().year}
+# {date.today().year}
+#
+
+print("Hello World")
+"""
+    assert f.read_text() == expected
+    assert return_code == 1

@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import argparse
 import functools
+import json
 import re
 import sys
 from datetime import date
+from pathlib import Path
 from typing import NamedTuple
 from typing import Sequence
 
@@ -177,13 +179,13 @@ def _add_license_header(
             'https://github.com/arkinmodi/add-license-header to add support!',
             file=sys.stderr,
         )
-        return -1
+        return 1
     except BinaryFileTypeException:
         print(
             f'cannot add license to a binary file: {filename}',
             file=sys.stderr,
         )
-        return -1
+        return 1
 
     license_header = wrap_license_in_comments(license_formatted, block_comment)
 
@@ -207,26 +209,72 @@ def _add_license_header(
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument('--author-name', help='defaults to empty string')
     parser.add_argument('--check', action='store_true')
     parser.add_argument(
-        '--license',
-        required=True,
-        help='path to license template',
+        '--config-file',
+        help=(
+            'path to configuration file '
+            '(default: ".add-license-header.json")'
+        ),
+        default='.add-license-header.json',
     )
-    parser.add_argument('--start-year', default=str(date.today().year))
-    parser.add_argument('--end-year', default=str(date.today().year))
-    parser.add_argument('--author-name', default='')
+    parser.add_argument('--end-year', help='defaults to current year')
+    parser.add_argument('--license', help='path to license template file')
+    parser.add_argument('--start-year', help='defaults to current year')
     parser.add_argument('filenames', nargs='*')
     args = parser.parse_args(argv)
 
-    with open(args.license) as f:
+    config_file = Path(args.config_file)
+    if config_file.exists():
+        with open(config_file) as f:
+            config = json.load(f)
+    else:
+        config = {}
+
+    if args.license is not None:
+        license_filename = args.license
+    elif 'license' in config:
+        license_filename = config['license']
+    else:
+        parser.print_usage(file=sys.stderr)
+        print(
+            'Error: missing license template. Set the license template with '
+            'either the --license flag or the "license" field in the '
+            'configuration file',
+            file=sys.stderr,
+        )
+        return 1
+
+    if args.start_year is not None:
+        start_year = args.start_year
+    elif 'start_year' in config:
+        start_year = str(config['start_year'])
+    else:
+        start_year = str(date.today().year)
+
+    if args.end_year is not None:
+        end_year = args.end_year
+    elif 'end_year' in config:
+        end_year = str(config['end_year'])
+    else:
+        end_year = str(date.today().year)
+
+    if args.author_name is not None:
+        author_name = args.author_name
+    elif 'author_name' in config:
+        author_name = config['author_name']
+    else:
+        author_name = ''
+
+    with open(license_filename) as f:
         license_template = f.readlines()
 
     license_formatted = build_license_header(
         license_template,
-        start_year=args.start_year,
-        end_year=args.end_year,
-        author_name=args.author_name,
+        start_year=start_year,
+        end_year=end_year,
+        author_name=author_name,
     )
 
     return_code = 0

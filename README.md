@@ -78,3 +78,24 @@ $ cat example.py
 
 print("Hello World")
 ```
+
+## Configuration File
+
+Instead of always using the CLI flags, you can define them in a JSON file. CLI
+flags will have higher priority than the configuration file. None of the fields
+are required (except `license` which must be defined with in the configuration
+file or using the CLI flag, `--license`).
+
+The default configuration file name is `.add-license-header.json` in the working
+directory. A custom path can be specified with the `--config-file` CLI flag.
+
+Here is the schema of the configuration:
+
+```json
+{
+    "author_name": "name of author or organization",
+    "end_year": "end year (number or string)",
+    "license": "path to license file",
+    "start_year": "start year (number or string)"
+}
+```

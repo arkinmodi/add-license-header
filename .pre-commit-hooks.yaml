@@ -1,0 +1,13 @@
+# yamllint disable rule:line-length
+# yaml-language-server: $schema=https://json.schemastore.org/pre-commit-hooks.json
+# yamllint enable rule:line-length
+---
+- id: add-license-header
+  name: Add license header
+  description: >
+    A tool for automatically adding your license as a header in your source
+    code.
+  language: python
+  entry: add-license-header
+  types:
+    - text

@@ -16,7 +16,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env: ["py38", "py39", "py310", "py311", "py312"]
+        env:
+          - py38
+          - py39
+          - py310
+          - py311
+          - py312
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4

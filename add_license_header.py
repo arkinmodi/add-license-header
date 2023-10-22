@@ -46,19 +46,14 @@ BLOCK_COMMENT = {
     'zsh': BlockComment('#', '#', '#'),
 }
 
-RE_AUTHOR_NAME = re.compile(r'\${author_name}')
-RE_END_YEAR = re.compile(r'\${end_year}')
-RE_START_YEAR = re.compile(r'\${start_year}')
-
 ALH_HEADER = 'LICENSE HEADER MANAGED BY add-license-header'
 
 
 @functools.lru_cache
-def _wrap_license_in_comments(
+def wrap_license_in_comments(
     license_fmt: tuple[str, ...],
-    file_type: str,
+    comment: BlockComment,
 ) -> list[str]:
-    comment = BLOCK_COMMENT[file_type]
     header = list(license_fmt)
 
     for i in range(len(header)):
@@ -75,32 +70,32 @@ def _wrap_license_in_comments(
     return header
 
 
-def _build_license_header(
-    filename: str,
+def build_license_header(
+    license_template: list[str],
     *,
     start_year: str,
     end_year: str,
     author_name: str,
 ) -> tuple[str, ...]:
-    with open(filename) as f:
-        license_template = f.readlines()
+    re_author_name = re.compile(r'\${author_name}')
+    re_end_year = re.compile(r'\${end_year}')
+    re_start_year = re.compile(r'\${start_year}')
 
     for i, line in enumerate(license_template):
-        line = RE_START_YEAR.sub(start_year, line)
-        line = RE_END_YEAR.sub(end_year, line)
-        line = RE_AUTHOR_NAME.sub(author_name, line)
-        license_template[i] = line.rstrip() + '\n'
+        line = re_start_year.sub(start_year, line)
+        line = re_end_year.sub(end_year, line)
+        line = re_author_name.sub(author_name, line)
+        license_template[i] = line
 
     return tuple(license_template)
 
 
-def _update_license_header(
+def update_license_header(
     *,
     contents: list[str],
-    file_type: str,
+    comment: BlockComment,
     license_header: list[str],
 ) -> list[str]:
-    comment = BLOCK_COMMENT[file_type]
     header_start_index = 0
     while (
         header_start_index < len(contents) and
@@ -152,7 +147,7 @@ class BinaryFileTypeException(Exception):
     pass
 
 
-def _get_file_type(filename: str) -> str:
+def get_block_comment(filename: str) -> BlockComment:
     identify_tags = identify.tags_from_path(filename)
 
     if 'binary' in identify_tags:
@@ -162,11 +157,9 @@ def _get_file_type(filename: str) -> str:
 
     for tag in identify_tags:
         if tag in BLOCK_COMMENT:
-            file_type = tag
-            break
+            return BLOCK_COMMENT[tag]
     else:
         raise UnknownFileTypeException(f'unsupported file format: {filename}')
-    return file_type
 
 
 def _add_license_header(
@@ -176,7 +169,7 @@ def _add_license_header(
     dry_run: bool,
 ) -> int:
     try:
-        file_type = _get_file_type(filename)
+        block_comment = get_block_comment(filename)
     except UnknownFileTypeException:
         print(f'unsupported file format: {filename}', file=sys.stderr)
         print(
@@ -192,14 +185,14 @@ def _add_license_header(
         )
         return -1
 
-    license_header = _wrap_license_in_comments(license_formatted, file_type)
+    license_header = wrap_license_in_comments(license_formatted, block_comment)
 
     with open(filename) as f:
         contents_text = f.readlines()
 
-    new_contents = _update_license_header(
+    new_contents = update_license_header(
         contents=contents_text,
-        file_type=file_type,
+        comment=block_comment,
         license_header=license_header,
     )
 
@@ -226,8 +219,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument('filenames', nargs='*')
     args = parser.parse_args(argv)
 
-    license_formatted = _build_license_header(
-        args.license,
+    with open(args.license) as f:
+        license_template = f.readlines()
+
+    license_formatted = build_license_header(
+        license_template,
         start_year=args.start_year,
         end_year=args.end_year,
         author_name=args.author_name,

@@ -34,6 +34,7 @@ BLOCK_COMMENT = {
     'kotlin': BlockComment('/*', ' *', ' */'),
     'lua': BlockComment('--[[', '', '--]]'),
     'makefile': BlockComment('#', '#', '#'),
+    'markdown': BlockComment('<!--', '', '-->'),
     'php': BlockComment('/*', ' *', ' */'),
     'python': BlockComment('#', '#', '#'),
     'ruby': BlockComment('#', '#', '#'),

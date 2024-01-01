@@ -38,11 +38,11 @@ repos:
     hooks:
       - id: flake8
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.6.1
+    rev: v1.8.0
     hooks:
       - id: mypy
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.32.0
+    rev: v1.33.0
     hooks:
       - id: yamllint
         args: [--strict]

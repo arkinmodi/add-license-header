@@ -16,7 +16,7 @@ Sample with license template file:
 
 ```yaml
 - repo: https://github.com/arkinmodi/add-license-header
-  rev: v2.0.1
+  rev: v2.0.2
   hooks:
       - id: add-license-header
         args:
@@ -28,7 +28,7 @@ Sample with inline license template:
 
 ```yaml
 - repo: https://github.com/arkinmodi/add-license-header
-  rev: v2.0.1
+  rev: v2.0.2
   hooks:
       - id: add-license-header
         args:

@@ -3,13 +3,13 @@
 # yamllint enable rule:line-length
 ---
 name: Build & Test
-'on':
+"on":
   pull_request:
   push:
     branches:
       - main
     tags:
-      - '*'
+      - "*"
 
 jobs:
   tox:
@@ -36,7 +36,7 @@ jobs:
               '3.12'
             }}
 
-      - run: python3 -m pip install --upgrade setuptools tox virtualenv
+      - run: python3 -m pip install --upgrade setuptools tox
       - run: tox -e ${{ matrix.env }}
 
   build:

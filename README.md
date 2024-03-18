@@ -2,22 +2,61 @@
 
 A tool for automatically adding your license as a header in your source code.
 
+## Installation
+
+```bash
+pip install add-license-header
+```
+
+## pre-commit hook
+
+See [pre-commit](https://github.com/pre-commit/pre-commit) for instructions.
+
+Sample with license template file:
+
+```yaml
+- repo: https://github.com/arkinmodi/add-license-header
+  rev: v2.0.0
+  hooks:
+      - id: add-license-header
+        args:
+            - --license-file
+            - MIT-LICENSE.template
+```
+
+Sample with inline license template:
+
+```yaml
+- repo: https://github.com/arkinmodi/add-license-header
+  rev: v2.0.0
+  hooks:
+      - id: add-license-header
+        args:
+            - --license
+            - |
+                MIT License
+
+                Copyright (c) $create_year $author_name
+                ...
+```
+
 ## Template Options
 
 You can use template markers to dynamically change your license.
 
-| Template Marker  |   Default    |    CLI Flag     |
-| :--------------: | :----------: | :-------------: |
-| `${start_year}`  | Current Year | `--start-year`  |
-|  `${end_year}`   | Current Year |  `--end-year`   |
-| `${author_name}` | Empty String | `--author-name` |
+|  Template Marker  |                                   Default                                    |      CLI Flag      |
+| :---------------: | :--------------------------------------------------------------------------: | :----------------: |
+|  `$author_name`   |                                Empty string.                                 |  `--author-name`   |
+|  `$create_year`   | Introduction into git history. If not managed by git, then the current year. |  `--create-year`   |
+|   `$edit_year`    |                                Current year.                                 |   `--edit-year`    |
+| `$year_delimiter` |                                     ", "                                     | `--year-delimiter` |
 
 For example:
 
 ```text
 MIT License
 
-Copyright (c) ${start_year} ${author_name}
+Copyright (c) $create_year $author_name
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,9 +84,9 @@ $ cat example.py
 print("Hello World")
 
 $ add-license-header \
-    --license MIT-LICENSE.template \
-    --author 'Arkin Modi' \
-    --start-year 2023 \
+    --license-file MIT-LICENSE.template \
+    --author-name 'Arkin Modi' \
+    --create-year 2023 \
     example.py
 updating license in example.py
 
@@ -75,27 +114,17 @@ $ cat example.py
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+#
 
 print("Hello World")
 ```
 
-## Configuration File
+## Managed vs Un-Managed
 
-Instead of always using the CLI flags, you can define them in a JSON file. CLI
-flags will have higher priority than the configuration file. None of the fields
-are required (except `license` which must be defined with in the configuration
-file or using the CLI flag, `--license`).
+In managed mode (the default), the license header will contain
+`LICENSE HEADER MANAGED BY add-license-header` in first line of the comment
+block. This enabled the tool to be able to accurately find the license header
+and allows you to place the license header anywhere in the file.
 
-The default configuration file name is `.add-license-header.json` in the working
-directory. A custom path can be specified with the `--config-file` CLI flag.
-
-Here is the schema of the configuration:
-
-```json
-{
-    "author_name": "name of author or organization",
-    "end_year": "end year (number or string)",
-    "license": "path to license file",
-    "start_year": "start year (number or string)"
-}
-```
+In unmanaged mode, enabled with the `--unmanaged` flag, the top-most comment
+block will be assumed to be the license header.

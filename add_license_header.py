@@ -297,6 +297,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             'date in git history. If that fails, will be defaulted to the '
             'current year.'
         ),
+        type=int,
     )
     parser.add_argument(
         '--exit-zero',
@@ -312,6 +313,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         '--edit-year',
         default=date.today().year,
         help='Value to replace $edit_year. Defaults to current year.',
+        type=int,
     )
     parser.add_argument(
         '--single-year-if-same',

@@ -31,6 +31,7 @@ BLOCK_COMMENT = {
     'go': BlockComment('/*', ' *', ' */'),
     'groovy': BlockComment('/*', ' *', ' */'),
     'html': BlockComment('<!--', '', '-->'),
+    'ini': BlockComment(';', ';', ';'),
     'java': BlockComment('/*', ' *', ' */'),
     'java-properties': BlockComment('#', '#', '#'),
     'javascript': BlockComment('/*', ' *', ' */'),

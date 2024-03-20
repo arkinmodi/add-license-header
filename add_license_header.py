@@ -51,6 +51,7 @@ BLOCK_COMMENT = {
     'toml': BlockComment('#', '#', '#'),
     'ts': BlockComment('/*', ' *', ' */'),
     'tsx': BlockComment('/*', ' *', ' */'),
+    'xml': BlockComment('<!--', '', '-->'),
     'yaml': BlockComment('#', '#', '#'),
     'zsh': BlockComment('#', '#', '#'),
 }

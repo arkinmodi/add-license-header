@@ -146,15 +146,25 @@ def update_license_header(
         comment: BlockComment,
         wrapped_license: list[str],
 ) -> list[str]:
-    if len(contents) > 0 and contents[0].startswith('#!'):
-        header_start_index = 1
-    else:
-        header_start_index = 0
+
+    # NOTE: "Special Comments" are comments that must appear at the top of the
+    # file (i.e., before the license header). Moving these comments to after
+    # the license header would break some form of functionality.
+    special_comments = (
+        '#!',  # shebang
+    )
+
     comment_start = wrapped_license[0].strip()
+    header_start_index = 0
 
     while (
-        header_start_index < len(contents) and
-        not contents[header_start_index].startswith(comment_start)
+        header_start_index < len(contents) and (
+            any(
+                contents[header_start_index].startswith(sc)
+                for sc in special_comments
+            ) or
+            not contents[header_start_index].startswith(comment_start)
+        )
     ):
         header_start_index += 1
 

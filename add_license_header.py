@@ -152,6 +152,7 @@ def update_license_header(
     # the license header would break some form of functionality.
     special_comments = (
         '#!',  # shebang
+        '<?php',  # php
     )
 
     comment_start = wrapped_license[0].strip()
@@ -170,16 +171,23 @@ def update_license_header(
 
     if header_start_index == len(contents):
         # License header not in file, so add it
-        if len(contents) > 0 and contents[0].startswith('#!'):
+        new_header_start_index = 0
+        while len(contents) > 0 and any(
+            contents[new_header_start_index].startswith(sc)
+            for sc in special_comments
+        ):
+            new_header_start_index += 1
+
+        if new_header_start_index > 0:
             new_contents = [
-                contents[0],
+                *contents[:new_header_start_index],
                 '\n',
                 *wrapped_license,
                 '\n',
-                *contents[1:],
+                *contents[new_header_start_index:],
             ]
         else:
-            new_contents = [*wrapped_license, '\n'] + contents
+            new_contents = wrapped_license + ['\n'] + contents
     else:
         # License header is in file, so update it
         header_end_index = header_start_index + 1

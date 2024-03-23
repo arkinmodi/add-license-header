@@ -172,7 +172,7 @@ def update_license_header(
     if header_start_index == len(contents):
         # License header not in file, so add it
         new_header_start_index = 0
-        while len(contents) > 0 and any(
+        while new_header_start_index < len(contents) and any(
             contents[new_header_start_index].startswith(sc)
             for sc in special_comments
         ):

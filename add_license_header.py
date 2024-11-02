@@ -5,9 +5,9 @@ import functools
 import string
 import subprocess
 import sys
+from collections.abc import Sequence
 from datetime import date
 from typing import NamedTuple
-from typing import Sequence
 from typing import TypedDict
 
 from identify import identify

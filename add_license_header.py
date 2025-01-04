@@ -156,6 +156,7 @@ def update_license_header(
     )
 
     comment_start = wrapped_license[0].strip()
+    commend_end = comment.end.strip()
     header_start_index = 0
 
     while (
@@ -164,7 +165,10 @@ def update_license_header(
                 contents[header_start_index].startswith(sc)
                 for sc in special_comments
             ) or
-            not contents[header_start_index].startswith(comment_start)
+            not contents[header_start_index].startswith(comment_start) or (
+                len(contents[header_start_index].rstrip()) > len(comment_start) and  # noqa: E501
+                contents[header_start_index].rstrip().endswith(commend_end)
+            )
         )
     ):
         header_start_index += 1
@@ -198,7 +202,6 @@ def update_license_header(
             ):
                 header_end_index += 1
         else:
-            commend_end = comment.end.strip()
             while (
                 header_end_index < len(contents) and
                 not contents[header_end_index].rstrip().endswith(commend_end)
@@ -210,11 +213,18 @@ def update_license_header(
         # block beginning and ending lines. For example, Java's comment blocks
         # start with '/*', however, '/**' is a popular starting line. This is
         # to preserve this style choice.
-        new_contents = (
-            contents[:header_start_index + 1] +
-            wrapped_license[1:-1] +
-            contents[header_end_index - 1:]
-        )
+        if header_start_index == header_end_index - 1:
+            new_contents = (
+                contents[:header_start_index + 1] +
+                wrapped_license[1:] +
+                contents[header_start_index + 1:]
+            )
+        else:
+            new_contents = (
+                contents[:header_start_index + 1] +
+                wrapped_license[1:-1] +
+                contents[header_end_index - 1:]
+            )
     return new_contents
 
 

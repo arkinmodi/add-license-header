@@ -127,4 +127,7 @@ block. This enabled the tool to be able to accurately find the license header
 and allows you to place the license header anywhere in the file.
 
 In unmanaged mode, enabled with the `--unmanaged` flag, the top-most comment
-block will be assumed to be the license header.
+block will be assumed to be the license header. Block comments that have been
+condensed to a single will not be treated as a block comment. This mode is less
+predictable and may require manual correction when first adding the license
+header.

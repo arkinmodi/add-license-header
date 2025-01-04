@@ -206,6 +206,128 @@ def test_main(contents, license_template, expected, tmp_path):
     assert return_code == 1
     assert f.read_text() == expected
 
+    # Run again to ensure we have reached a steady state
+    return_code = main([
+        '--author-name', 'John Smith',
+        '--create-year', '2023',
+        '--edit-year', '2024',
+        '--license', license_template,
+        f.resolve().as_posix(),
+    ])
+
+    assert return_code == 0
+    assert f.read_text() == expected
+
+
+@pytest.mark.parametrize(
+    ('filename', 'contents', 'license_template', 'expected'),
+    (
+        pytest.param(
+            't.py',
+            'print("Hello World")\n',
+            (
+                'TEST LICENSE\n'
+                'this is a test license\n'
+                '$create_year\n'
+                '$edit_year\n'
+                '$author_name\n'
+            ),
+            (
+                '#\n'
+                '# TEST LICENSE\n'
+                '# this is a test license\n'
+                '# 2023\n'
+                '# 2024\n'
+                '# John Smith\n'
+                '#\n'
+                '\n'
+                'print("Hello World")\n'
+            ),
+            id='add license header to file',
+        ),
+        pytest.param(
+            't.py',
+            '# first line\nprint("Hello World")\n',
+            (
+                'TEST LICENSE\n'
+                'this is a test license\n'
+                '$create_year\n'
+                '$edit_year\n'
+                '$author_name\n'
+            ),
+            (
+                '# first line\n'
+                '# TEST LICENSE\n'
+                '# this is a test license\n'
+                '# 2023\n'
+                '# 2024\n'
+                '# John Smith\n'
+                '#\n'
+                'print("Hello World")\n'
+            ),
+            id='existing single line comment',
+        ),
+        pytest.param(
+            't.md',
+            '<!--first line-->\n# Hello\n',
+            (
+                'TEST LICENSE\n'
+                'this is a test license\n'
+                '$create_year\n'
+                '$edit_year\n'
+                '$author_name\n'
+            ),
+            (
+                '<!--\n'
+                'TEST LICENSE\n'
+                'this is a test license\n'
+                '2023\n'
+                '2024\n'
+                'John Smith\n'
+                '-->\n'
+                '\n'
+                '<!--first line-->\n'
+                '# Hello\n'
+            ),
+            id='add license header to file with single line comment block',
+        ),
+    ),
+)
+def test_main_unmanaged(
+    filename,
+    contents,
+    license_template,
+    expected,
+    tmp_path,
+):
+    f = tmp_path.joinpath(filename)
+    f.write_text(contents)
+
+    return_code = main([
+        '--author-name', 'John Smith',
+        '--create-year', '2023',
+        '--edit-year', '2024',
+        '--license', license_template,
+        '--unmanaged',
+        f.resolve().as_posix(),
+    ])
+
+    assert return_code == 1
+    assert f.read_text() == expected
+
+    # Run again to ensure we have reached a steady state
+    return_code = main([
+        '--author-name', 'John Smith',
+        '--create-year', '2023',
+        '--edit-year', '2024',
+        '--license', license_template,
+        '--unmanaged',
+        f.resolve().as_posix(),
+    ])
+
+    assert return_code == 0
+    assert f.read_text() == expected
+
 
 def test_main_file_type_with_diffent_comment_block_characters(tmp_path):
     license_template = (
@@ -300,42 +422,6 @@ def test_main_no_change(contents, license_template, tmp_path):
 
     assert return_code == 0
     assert f.read_text() == contents
-
-
-def test_main_add_license_header_file_to_unmanaged_file(tmp_path):
-    license_file = tmp_path.joinpath('license')
-    license_file.write_text(
-        'TEST LICENSE\n'
-        'this is a test license\n'
-        '$create_year\n'
-        '$edit_year\n'
-        '$author_name\n',
-    )
-    f = tmp_path.joinpath('t.py')
-    f.write_text('print("Hello World")\n')
-
-    return_code = main([
-        '--license-file', license_file.resolve().as_posix(),
-        '--create-year', '2023',
-        '--edit-year', '2024',
-        '--author-name', 'John Smith',
-        '--unmanaged',
-        f.resolve().as_posix(),
-    ])
-
-    expected = """\
-#
-# TEST LICENSE
-# this is a test license
-# 2023
-# 2024
-# John Smith
-#
-
-print("Hello World")
-"""
-    assert return_code == 1
-    assert f.read_text() == expected
 
 
 @pytest.mark.parametrize(

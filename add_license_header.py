@@ -27,6 +27,8 @@ BLOCK_COMMENT = {
     'c': BlockComment('/*', ' *', ' */'),
     'c++': BlockComment('/*', ' *', ' */'),
     'css': BlockComment('/*', ' *', ' */'),
+    'dockerfile': BlockComment('#', '#', '#'),
+    'dockerignore': BlockComment('#', '#', '#'),
     'gherkin': BlockComment('#', '#', '#'),
     'go': BlockComment('/*', ' *', ' */'),
     'groovy': BlockComment('/*', ' *', ' */'),

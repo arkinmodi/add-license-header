@@ -30,6 +30,7 @@ BLOCK_COMMENT = {
     'dockerfile': BlockComment('#', '#', '#'),
     'dockerignore': BlockComment('#', '#', '#'),
     'gherkin': BlockComment('#', '#', '#'),
+    'gitignore': BlockComment('#', '#', '#'),
     'go': BlockComment('/*', ' *', ' */'),
     'groovy': BlockComment('/*', ' *', ' */'),
     'html': BlockComment('<!--', '', '-->'),

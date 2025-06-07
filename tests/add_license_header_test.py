@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from datetime import date
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -189,11 +190,35 @@ def test_wrap_license_in_comments(
             ),
             id='regular file with old header that is longer than new header',
         ),
+        pytest.param(
+            (
+                '# LICENSE HEADER MANAGED BY add-license-header\n'
+                '#\n'
+                '# OLD TEST LICENSE\n'
+                '# this is a test license\n'
+                '#\n'
+                '\n'
+                'print("é")\n'
+            ),
+            (
+                '© NEW TEST LICENSE\n'
+            ),
+            (
+                '# LICENSE HEADER MANAGED BY add-license-header\n'
+                '#\n'
+                '# © NEW TEST LICENSE\n'
+                '#\n'
+                '\n'
+                'print("é")\n'
+            ),
+            id='regular file and license with utf-8 characters',
+        ),
     ),
 )
 def test_main(contents, license_template, expected, tmp_path):
+    expected = expected.replace('\n', os.linesep)
     f = tmp_path.joinpath('t.py')
-    f.write_text(contents)
+    f.write_text(contents, encoding='utf-8')
 
     return_code = main([
         '--author-name', 'John Smith',
@@ -204,7 +229,7 @@ def test_main(contents, license_template, expected, tmp_path):
     ])
 
     assert return_code == 1
-    assert f.read_text() == expected
+    assert f.read_bytes() == expected.encode()
 
     # Run again to ensure we have reached a steady state
     return_code = main([
@@ -216,7 +241,7 @@ def test_main(contents, license_template, expected, tmp_path):
     ])
 
     assert return_code == 0
-    assert f.read_text() == expected
+    assert f.read_bytes() == expected.encode()
 
 
 @pytest.mark.parametrize(
@@ -329,7 +354,7 @@ def test_main_unmanaged(
     assert f.read_text() == expected
 
 
-def test_main_file_type_with_diffent_comment_block_characters(tmp_path):
+def test_main_file_type_with_different_comment_block_characters(tmp_path):
     license_template = (
         'TEST LICENSE\n'
         'this is a test license\n'
@@ -554,7 +579,7 @@ print("Hello World")
     assert f.read_text() == expected
 
 
-def test_main_exit_zero_if_unsupported_file_type(tmp_path):
+def test_main_exit_zero_if_unsupported_file_type(capsys, tmp_path):
     f = tmp_path.joinpath('unsupported')
     f.write_text('unsupported')
 
@@ -570,7 +595,10 @@ def test_main_exit_zero_if_unsupported_file_type(tmp_path):
         f.resolve().as_posix(),
     ])
 
+    _, err = capsys.readouterr()
+
     assert return_code == 0
+    assert err == f'unsupported file format: {f.resolve().as_posix()}\n'
 
 
 @patch('add_license_header.subprocess.run')
@@ -649,3 +677,50 @@ print("Hello World")
 """
     assert return_code == 1
     assert f.read_text() == expected
+
+
+def test_main_non_utf_8_input_file(capsys, tmp_path):
+    f = tmp_path.joinpath('t.py')
+    f.write_text('print("¥")\n', encoding='cp1252')
+
+    license_template = (
+        'TEST LICENSE\n'
+        'this is a test license\n'
+        '$create_year$year_delimiter$edit_year\n'
+    )
+
+    return_code = main([
+        '--author-name', 'John Smith',
+        '--create-year', '2023',
+        '--edit-year', '2024',
+        '--license', license_template,
+        f.resolve().as_posix(),
+    ])
+
+    _, err = capsys.readouterr()
+
+    assert return_code == 1
+    assert err == f'{f.resolve().as_posix()} is not utf-8\n'
+
+
+def test_main_non_utf_8_license_file(capsys, tmp_path):
+    license_file = tmp_path.joinpath('license')
+    license_file.write_text('¥\n', encoding='cp1252')
+    f = tmp_path.joinpath('t.py')
+    f.write_text('print("hello world")\n')
+
+    return_code = main([
+        '--author-name', 'John Smith',
+        '--create-year', '2023',
+        '--edit-year', '2024',
+        '--license-file', license_file.resolve().as_posix(),
+        f.resolve().as_posix(),
+    ])
+
+    _, err = capsys.readouterr()
+    expected_err = (
+        f'license file "{license_file.resolve().as_posix()}" is not utf-8\n'
+    )
+
+    assert return_code == 1
+    assert err == expected_err

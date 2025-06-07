@@ -287,8 +287,18 @@ def add_license_header(
         is_managed,
     )
 
-    with open(filepath) as f:
-        contents_text = f.readlines()
+    with open(filepath, 'rb') as f:
+        contents_bytes = f.read()
+
+    try:
+        contents_text = contents_bytes.decode().splitlines()
+        contents_text = [c + '\n' for c in contents_text]
+    except UnicodeDecodeError:
+        print(
+            f'{filepath} is not utf-8',
+            file=sys.stderr,
+        )
+        return 1
 
     new_contents = update_license_header(
         contents_text,
@@ -299,7 +309,7 @@ def add_license_header(
     if new_contents != contents_text:
         print(f'updating license in {filepath}', file=sys.stderr)
         if not dry_run:
-            with open(filepath, 'w') as f:
+            with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(''.join(new_contents))
         return 1
     return 0
@@ -388,13 +398,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.license_file is not None:
-        with open(args.license_file) as f:
-            license_template = f.read()
+        with open(args.license_file, 'rb') as f:
+            license_template_bytes = f.read()
+
+        try:
+            license_template = license_template_bytes.decode()
+        except UnicodeDecodeError:
+            print(
+                f'license file "{args.license_file}" is not utf-8',
+                file=sys.stderr,
+            )
+            return 1
     else:
-        license_template = bytes(
-            args.license,
-            'utf-8',
-        ).decode('unicode_escape')
+        license_template = args.license
 
     return_code = 0
     for filename in args.filenames:

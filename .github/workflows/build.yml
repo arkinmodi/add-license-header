@@ -24,7 +24,7 @@ jobs:
           - py312
           - py313
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: |
@@ -42,7 +42,7 @@ jobs:
   tox-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: tox
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x

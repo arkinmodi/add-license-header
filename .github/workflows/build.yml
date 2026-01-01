@@ -18,22 +18,22 @@ jobs:
       fail-fast: false
       matrix:
         env:
-          - py39
           - py310
           - py311
           - py312
           - py313
+          - py314
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: |
             ${{
-              matrix.env == 'py39'  && '3.9'  ||
               matrix.env == 'py310' && '3.10' ||
               matrix.env == 'py311' && '3.11' ||
               matrix.env == 'py312' && '3.12' ||
-              '3.13'
+              matrix.env == 'py313' && '3.13' ||
+              '3.14'
             }}
 
       - run: python3 -m pip install --upgrade setuptools tox

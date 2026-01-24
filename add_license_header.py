@@ -43,6 +43,7 @@ BLOCK_COMMENT = {
     'lua': BlockComment('--[[', '', '--]]'),
     'makefile': BlockComment('#', '#', '#'),
     'markdown': BlockComment('<!--', '', '-->'),
+    'nix': BlockComment('#', '#', '#'),
     'php': BlockComment('/*', ' *', ' */'),
     'python': BlockComment('#', '#', '#'),
     'ruby': BlockComment('#', '#', '#'),

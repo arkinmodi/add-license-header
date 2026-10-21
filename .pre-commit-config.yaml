@@ -17,7 +17,7 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.16.0
+    rev: v3.17.0
     hooks:
       - id: reorder-python-imports
         args: [--py310-plus, --add-import, "from __future__ import annotations"]
@@ -39,12 +39,12 @@ repos:
       - id: autopep8
 
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.3.0
+    rev: 7.4.1
     hooks:
       - id: flake8
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.1.0
+    rev: v2.4.0
     hooks:
       - id: mypy
 
